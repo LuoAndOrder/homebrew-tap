@@ -1,0 +1,94 @@
+name: Update Formula
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Check hourly
+  workflow_dispatch:      # Manual trigger
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for new release
+        id: check
+        run: |
+          LATEST=$(gh release view --repo LuoAndOrder/todoist-rs --json tagName -q .tagName)
+          CURRENT=$(grep 'version "' Formula/todoist-cli.rb | head -1 | sed 's/.*"\(.*\)"/\1/')
+          echo "latest=${LATEST#v}" >> $GITHUB_OUTPUT
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          echo "Latest: ${LATEST#v}, Current: $CURRENT"
+          if [ "${LATEST#v}" != "$CURRENT" ]; then
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download checksums
+        if: steps.check.outputs.needs_update == 'true'
+        run: |
+          VERSION=${{ steps.check.outputs.latest }}
+          gh release download "v${VERSION}" \
+            --repo LuoAndOrder/todoist-rs \
+            --pattern "checksums-sha256.txt"
+          cat checksums-sha256.txt
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update formula
+        if: steps.check.outputs.needs_update == 'true'
+        run: |
+          VERSION=${{ steps.check.outputs.latest }}
+
+          # Extract checksums
+          AARCH64_DARWIN=$(grep aarch64-apple-darwin checksums-sha256.txt | cut -d' ' -f1)
+          X86_64_DARWIN=$(grep x86_64-apple-darwin checksums-sha256.txt | cut -d' ' -f1)
+          X86_64_LINUX=$(grep x86_64-unknown-linux-gnu checksums-sha256.txt | cut -d' ' -f1)
+
+          # Generate new formula
+          cat > Formula/todoist-cli.rb << FORMULA
+          class TodoistCli < Formula
+            desc "Fast, offline-capable CLI for Todoist"
+            homepage "https://github.com/LuoAndOrder/todoist-rs"
+            version "${VERSION}"
+            license "MIT"
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "https://github.com/LuoAndOrder/todoist-rs/releases/download/v${VERSION}/td-aarch64-apple-darwin.tar.gz"
+                sha256 "${AARCH64_DARWIN}"
+              else
+                url "https://github.com/LuoAndOrder/todoist-rs/releases/download/v${VERSION}/td-x86_64-apple-darwin.tar.gz"
+                sha256 "${X86_64_DARWIN}"
+              end
+            end
+
+            on_linux do
+              if Hardware::CPU.intel?
+                url "https://github.com/LuoAndOrder/todoist-rs/releases/download/v${VERSION}/td-x86_64-unknown-linux-gnu.tar.gz"
+                sha256 "${X86_64_LINUX}"
+              end
+            end
+
+            def install
+              bin.install "td"
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/td --version")
+            end
+          end
+          FORMULA
+
+          cat Formula/todoist-cli.rb
+
+      - name: Commit and push
+        if: steps.check.outputs.needs_update == 'true'
+        run: |
+          VERSION=${{ steps.check.outputs.latest }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/todoist-cli.rb
+          git commit -m "Update todoist-cli to v${VERSION}"
+          git push
