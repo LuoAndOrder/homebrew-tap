@@ -1,9 +1,10 @@
 name: Update Formula
 
 on:
-  schedule:
-    - cron: '0 * * * *'  # Check hourly
-  workflow_dispatch:      # Manual trigger
+  workflow_dispatch:  # Manual trigger only
+
+permissions:
+  contents: write
 
 jobs:
   update:
