@@ -1,23 +1,23 @@
 class TodoistCli < Formula
   desc "Fast, offline-capable CLI for Todoist"
   homepage "https://github.com/LuoAndOrder/todoist-rs"
-  version "0.1.3"
+  version "0.1.4"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/LuoAndOrder/todoist-rs/releases/download/v0.1.3/td-aarch64-apple-darwin.tar.gz"
-      sha256 "9621b981800c4a4e75dd7e888aaa0191942b9df0296c5bb3d673303ee0700e6e"
+      url "https://github.com/LuoAndOrder/todoist-rs/releases/download/v0.1.4/td-aarch64-apple-darwin.tar.gz"
+      sha256 "f3e354b4fd87d4728cd449262940b5a3eb93abe56b58eb40708bd84599c650e4"
     else
-      url "https://github.com/LuoAndOrder/todoist-rs/releases/download/v0.1.3/td-x86_64-apple-darwin.tar.gz"
-      sha256 "8df6dbd0627062dd0cf16292520346f1d5dbea536e573567ab81e21b71346344"
+      url "https://github.com/LuoAndOrder/todoist-rs/releases/download/v0.1.4/td-x86_64-apple-darwin.tar.gz"
+      sha256 "301c3e9dc789d8781cdfe607590182b744b41f5f711574305fa11bc947368f0d"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel?
-      url "https://github.com/LuoAndOrder/todoist-rs/releases/download/v0.1.3/td-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "782b7b9da1ac5ed4fa0034d1d4563adf45713edc2689b60fa41fd65118cea55b"
+      url "https://github.com/LuoAndOrder/todoist-rs/releases/download/v0.1.4/td-x86_64-unknown-linux-gnu.tar.gz"
+      sha256 "b8969de554c9f2b2b53abba04a81a826e3a88f838ba54bb7affb2ca69a980451"
     end
   end
 
